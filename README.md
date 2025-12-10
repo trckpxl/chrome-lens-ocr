@@ -85,7 +85,7 @@ This project is a Rust port of [chrome-lens-py](https://github.com/bropines/chro
 
 ## 🛠 Projects Used In
 
-  * [Mangatan](https://github.com/KolbyML/Mangatan) - A manga translation tool.
+  * [Mangatan](https://github.com/KolbyML/Mangatan) - Easy to use all-in-one solution for reading Japanese manga with automatic OCR for seamless Yomitan lookups
 
 ## ⚖️ License
 
