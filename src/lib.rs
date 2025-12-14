@@ -2,10 +2,9 @@ pub mod constants;
 pub mod image_processor;
 pub mod proto;
 
-use std::f32::consts::PI;
-use std::time::Duration;
+use std::{f32::consts::PI, time::Duration};
 
-use anyhow::{Result, anyhow};
+use anyhow::anyhow;
 use prost::Message;
 use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue, USER_AGENT};
 
@@ -72,7 +71,11 @@ impl LensClient {
         }
     }
 
-    pub async fn process_image_path(&self, path: &str, lang: Option<&str>) -> Result<LensResult> {
+    pub async fn process_image_path(
+        &self,
+        path: &str,
+        lang: Option<&str>,
+    ) -> anyhow::Result<LensResult> {
         let processed = image_processor::process_image_from_path(path)?;
         self.send_request(processed, lang).await
     }
@@ -81,7 +84,7 @@ impl LensClient {
         &self,
         bytes: &[u8],
         lang: Option<&str>,
-    ) -> Result<LensResult> {
+    ) -> anyhow::Result<LensResult> {
         let processed = image_processor::process_image_from_bytes(bytes)?;
         self.send_request(processed, lang).await
     }
@@ -90,7 +93,7 @@ impl LensClient {
         &self,
         image: image_processor::ProcessedImage,
         lang: Option<&str>,
-    ) -> Result<LensResult> {
+    ) -> anyhow::Result<LensResult> {
         let request_id_val = rand::random::<u64>();
 
         let req_proto = LensOverlayServerRequest {
@@ -158,7 +161,7 @@ impl LensClient {
 
     // --- Parsing Logic (Ported from api.py) ---
 
-    fn parse_response(&self, response: LensOverlayServerResponse) -> Result<LensResult> {
+    fn parse_response(&self, response: LensOverlayServerResponse) -> anyhow::Result<LensResult> {
         let mut paragraphs_list = Vec::new();
         let mut full_text_buffer = String::new();
 
@@ -180,10 +183,6 @@ impl LensClient {
 
         // Extract Translation
         let translation = self.extract_translation(&response);
-
-        if full_text_buffer.trim().is_empty() && translation.is_none() {
-            return Err(anyhow!("No text or translation found in image"));
-        }
 
         Ok(LensResult {
             full_text: full_text_buffer.trim().to_string(),

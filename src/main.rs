@@ -1,5 +1,6 @@
-use chrome_lens_ocr::LensClient;
 use std::env;
+
+use chrome_lens_ocr::LensClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
