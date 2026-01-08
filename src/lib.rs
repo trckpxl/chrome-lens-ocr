@@ -71,6 +71,26 @@ impl LensClient {
         }
     }
 
+    pub fn new_with_proxy(api_key: Option<String>, proxy_url: Option<&str>) -> anyhow::Result<Self> {
+        let mut client_builder = reqwest::Client::builder()
+            .timeout(Duration::from_secs(60));
+
+        if let Some(proxy) = proxy_url {
+            let proxy_obj = reqwest::Proxy::all(proxy)
+                .map_err(|e| anyhow!("Failed to create proxy from URL '{}': {}", proxy, e))?;
+            client_builder = client_builder.proxy(proxy_obj);
+        }
+
+        let client = client_builder
+            .build()
+            .map_err(|e| anyhow!("Failed to build reqwest client: {}", e))?;
+
+        Ok(Self {
+            client,
+            api_key: api_key.unwrap_or_else(|| DEFAULT_API_KEY.to_string()),
+        })
+    }
+
     pub async fn process_image_path(
         &self,
         path: &str,
