@@ -74,3 +74,21 @@ jobs:
 
     - name: Test
       run: cargo test --release --workspace -- --nocapture
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Build
+        run: cargo build --release --verbose
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lens-windows
+          path: target/release/lens.exe
