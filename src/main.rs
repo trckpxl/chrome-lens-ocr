@@ -1,46 +1,54 @@
-use std::env;
+use std::{fs, path::PathBuf};
 
+use arboard::Clipboard;
+use clap::Parser;
 use chrome_lens_ocr::LensClient;
+
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Path to the image file
+    image_path: String,
+
+    /// Output the text to a file with the same name as the input image
+    #[arg(long)]
+    text: bool,
+
+    /// Copy the text to the clipboard
+    #[arg(long)]
+    clip: bool,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        eprintln!("Usage: {} <path_to_image>", args[0]);
-        return Ok(());
-    }
-
-    let image_path = &args[1];
+    let args = Args::parse();
+    let image_path = &args.image_path;
 
     let client = LensClient::new(None);
 
-    println!("Processing image: {}", image_path);
     match client.process_image_path(image_path, Some("en")).await {
         Ok(result) => {
-            println!("--- Full Text ---");
             println!("{}", result.full_text);
 
-            println!("\n--- Detailed Structure ---");
-            println!("Found {} paragraphs.", result.paragraphs.len());
-            for (i, para) in result.paragraphs.iter().enumerate() {
-                println!("Paragraph {}: {} lines", i + 1, para.lines.len());
-                if let Some(first_line) = para.lines.first() {
-                    if let Some(geom) = &first_line.geometry {
-                        println!(
-                            "  -> First line pos: x={:.2}, y={:.2}, w={:.2}",
-                            geom.center_x, geom.center_y, geom.width
-                        );
-                    }
-                }
+            if args.text {
+                let mut path = PathBuf::from(image_path);
+                path.set_extension("txt");
+                fs::write(&path, &result.full_text)?;
+                // println!("Text saved to: {:?}", path);
             }
 
-            if let Some(trans) = result.translation {
-                println!("\n--- Translation ---");
-                println!("{}", trans);
+            if args.clip {
+                match Clipboard::new() {
+                    Ok(mut clipboard) => {
+                        if let Err(e) = clipboard.set_text(&result.full_text) {
+                            eprintln!("Failed to copy to clipboard: {}", e);
+                        }
+                    }
+                    Err(e) => eprintln!("Failed to initialize clipboard: {}", e),
+                }
             }
-            println!("------------------");
         }
         Err(e) => {
             eprintln!("Error: {:?}", e);
