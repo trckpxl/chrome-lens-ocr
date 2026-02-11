@@ -30,7 +30,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match client.process_image_path(image_path, Some("en")).await {
         Ok(result) => {
-            println!("{}", result.full_text);
+            if !args.text && !args.clip {
+                println!("{}", result.full_text);
+            }
 
             if args.text {
                 let mut path = PathBuf::from(image_path);
